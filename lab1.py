@@ -1,71 +1,84 @@
-import numpy as np
-import matplotlib.pyplot as plt
+def f(t, y):
+    """Функция правой части дифференциального уравнения."""
+    return -(y**2) / (1 + t**2)
 
-# Параметры
-h = 0.1          # Шаг интегрирования
-T = 10           # Конечное время
-N = int(T / h)   # Количество шагов
-t = np.linspace(0, T, N + 1)  # Время
+def explicit_method(t0, y0, tf, h):
+    """Явный метод Эйлера."""
+    n = int((tf - t0) / h)
+    t = t0
+    y = y0
+    results = [(t, y)]
+    for _ in range(n):
+        y += h * f(t, y)
+        t += h
+        results.append((t, y))
+    return results
 
-# Изначальные условия
-y0 = 1
+def implicit_method(t0, y0, tf, h):
+    """Неявный метод Эйлера."""
+    n = int((tf - t0) / h)
+    t = t0
+    y = y0
+    results = [(t, y)]
+    for _ in range(n):
+        y_new = y
+        for _ in range(10):  
+            y_new = y + h * f(t + h, y_new)
+        y = y_new
+        t += h
+        results.append((t, y))
+    return results
 
-# Явная схема (Метод Эйлера)
-def explicit_euler(h, y0, t):
-    y = np.zeros(N + 1)
-    y[0] = y0
-    for n in range(N):
-        y[n + 1] = y[n] - h * (y[n]**2) / (1 + t[n]**2)
-    return y
+def weighted_method(t0, y0, tf, h):
+    """Весовой метод."""
+    n = int((tf - t0) / h)
+    t = t0
+    y = y0
+    results = [(t, y)]
+    for _ in range(n):
+        y_explicit = y + h * f(t, y)
+        y_weighted = y + 0.5 * h * (f(t, y) + f(t + h, y_explicit))
+        y = y_weighted
+        t += h
+        results.append((t, y))
+    return results
 
-# Неявная схема (Метод Эйлера)
-def implicit_euler(h, y0, t):
-    y = np.zeros(N + 1)
-    y[0] = y0
-    for n in range(N):
-        # Нелинейное уравнение, решение методом простых итераций
-        y_prev = y[n]  # Начальное приближение
-        for _ in range(10): # Итерации для нахождения y[n+1]
-            y_next = y_prev + h * (-(y_prev**2) / (1 + (t[n] + h)**2))
-            y_prev = y_next
-        y[n + 1] = y_next
-    return y
-
-# Весовая схема (Метод Рунге-Кутты 2-го порядка)
-def runge_kutta(h, y0, t):
-    y = np.zeros(N + 1)
-    y[0] = y0
-    for n in range(N):
-        k1 = - (y[n]**2) / (1 + t[n]**2)
-        k2 = - ((y[n] + h * k1)**2) / (1 + (t[n] + h)**2)
-        y[n + 1] = y[n] + (h / 2) * (k1 + k2)
-    return y
-
-# Аналитическое решение
 def analytical_solution(t, y0):
-    return 1 / (np.arctan(t) + 1 / y0)
+    """Аналитическое решение для y(t)"""
+    # Решение полученное через разделение переменных
+    # Уравнение: 1/y = C + arctan(t)
+    # Здесь C = 1/y0 - arctan(t0) (если t0 = 0)
+    from math import atan
+    C = 1 / y0 - atan(0)
+    return 1 / (C + atan(t))
 
-# Решение
-y_explicit = explicit_euler(h, y0, t)
-y_implicit = implicit_euler(h, y0, t)
-y_rk = runge_kutta(h, y0, t)
-y_analytical = analytical_solution(t, y0)
+# Основной код для тестирования методов
+if __name__ == "__main__":
+    t0 = 0.0        # Начальное значение t
+    y0 = 1.0        # Начальное значение y
+    tf = 5.0        # Конечное значение t
+    h = 0.1         # Шаг
 
-# Вывод результата в консоль
-print("Явная схема (Метод Эйлера):", y_explicit)
-print("Неявная схема (Метод Эйлера):", y_implicit)
-print("Весовая схема (Метод Рунге-Кутты):", y_rk)
-print("Аналитическое решение:", y_analytical)
+    # Численные решения
+    explicit_results = explicit_method(t0, y0, tf, h)
+    implicit_results = implicit_method(t0, y0, tf, h)
+    weighted_results = weighted_method(t0, y0, tf, h)
 
-# Построение графика
-plt.figure(figsize=(10, 6))
-plt.plot(t, y_explicit, label='Явная схема', linestyle='-', marker='o')
-plt.plot(t, y_implicit, label='Неявная схема', linestyle='-', marker='x')
-plt.plot(t, y_rk, label='Метод Рунге-Кутты', linestyle='-', marker='d')
-plt.plot(t, y_analytical, label='Аналитическое решение', linestyle='--')
-plt.title('Сравнение численных и аналитического решений')
-plt.xlabel('Время (t)')
-plt.ylabel('Решение (y)')
-plt.legend()
-plt.grid()
-plt.show()
+    # Аналитическое решение
+    analytical_results = [(t, analytical_solution(t, y0)) for t in [t0 + i * h for i in range(int((tf - t0) / h) + 1)]]
+
+    print("Явный метод Эйлера:")
+    for t, y in explicit_results:
+        print(f"t = {t:.2f}, y = {y:.5f}")
+
+    print("\nНеявный метод Эйлера:")
+    for t, y in implicit_results:
+        print(f"t = {t:.2f}, y = {y:.5f}")
+
+    print("\nВесовой метод:")
+    for t, y in weighted_results:
+        print(f"t = {t:.2f}, y = {y:.5f}")
+
+    print("\nАналитическое решение:")
+    for t, y in analytical_results:
+        print(f"t = {t:.2f}, y = {y:.5f}")
