@@ -1,84 +1,73 @@
+import math
+import matplotlib.pyplot as plt
+
+# Определяем функцию
 def f(t, y):
-    """Функция правой части дифференциального уравнения."""
-    return -(y**2) / (1 + t**2)
+    return -2 * y + math.exp(-t)
 
-def explicit_method(t0, y0, tf, h):
-    """Явный метод Эйлера."""
-    n = int((tf - t0) / h)
-    t = t0
-    y = y0
-    results = [(t, y)]
-    for _ in range(n):
-        y += h * f(t, y)
-        t += h
-        results.append((t, y))
-    return results
+# Аналитическое решение
+def analytical_solution(t):
+    return (1/6) * math.exp(-2*t) + (1/3) * math.exp(-t)
 
-def implicit_method(t0, y0, tf, h):
-    """Неявный метод Эйлера."""
-    n = int((tf - t0) / h)
-    t = t0
-    y = y0
-    results = [(t, y)]
-    for _ in range(n):
-        y_new = y
+# Явная схема
+def explicit_scheme(t0, y0, h, N):
+    t = [t0 + i*h for i in range(N + 1)]
+    y = [y0]
+    for i in range(1, N + 1):
+        y.append(y[i - 1] + h * f(t[i - 1], y[i - 1]))
+    return t, y
+
+# Неявная схема
+def implicit_scheme(t0, y0, h, N):
+    t = [t0 + i*h for i in range(N + 1)]
+    y = [y0]
+    for i in range(1, N + 1):
+        y_next = y[i - 1]  
         for _ in range(10):  
-            y_new = y + h * f(t + h, y_new)
-        y = y_new
-        t += h
-        results.append((t, y))
-    return results
+            y_next = y[i - 1] + (h / 2) * (f(t[i], y_next) + f(t[i - 1], y[i - 1]))
+        y.append(y_next)
+    return t, y
 
-def weighted_method(t0, y0, tf, h):
-    """Весовой метод."""
-    n = int((tf - t0) / h)
-    t = t0
-    y = y0
-    results = [(t, y)]
-    for _ in range(n):
-        y_explicit = y + h * f(t, y)
-        y_weighted = y + 0.5 * h * (f(t, y) + f(t + h, y_explicit))
-        y = y_weighted
-        t += h
-        results.append((t, y))
-    return results
+# Весовая схема
+def weighted_scheme(t0, y0, h, N):
+    t = [t0 + i*h for i in range(N + 1)]
+    y = [y0]
+    for i in range(1, N + 1):
+        y.append(y[i - 1] + (h / 2) * (f(t[i - 1], y[i - 1]) + f(t[i], y[i - 1])))
+    return t, y
 
-def analytical_solution(t, y0):
-    """Аналитическое решение для y(t)"""
-    # Решение полученное через разделение переменных
-    # Уравнение: 1/y = C + arctan(t)
-    # Здесь C = 1/y0 - arctan(t0) (если t0 = 0)
-    from math import atan
-    C = 1 / y0 - atan(0)
-    return 1 / (C + atan(t))
-
-# Основной код для тестирования методов
+# Основная часть программы
 if __name__ == "__main__":
-    t0 = 0.0        # Начальное значение t
-    y0 = 1.0        # Начальное значение y
-    tf = 5.0        # Конечное значение t
-    h = 0.1         # Шаг
+    # Параметры
+    t0 = 0        # начальное время
+    y0 = 1        # начальное значение
+    h = 0.1       # шаг
+    N = 100       # количество шагов
 
-    # Численные решения
-    explicit_results = explicit_method(t0, y0, tf, h)
-    implicit_results = implicit_method(t0, y0, tf, h)
-    weighted_results = weighted_method(t0, y0, tf, h)
+    # Решаем уравнения
+    t_explicit, y_explicit = explicit_scheme(t0, y0, h, N)
+    t_implicit, y_implicit = implicit_scheme(t0, y0, h, N)
+    t_weighted, y_weighted = weighted_scheme(t0, y0, h, N)
+    
+    # Вычисления для аналитического решения
+    t_analytical = [t0 + i*h for i in range(N + 1)]
+    y_analytical = [analytical_solution(t) for t in t_analytical]
 
-    # Аналитическое решение
-    analytical_results = [(t, analytical_solution(t, y0)) for t in [t0 + i * h for i in range(int((tf - t0) / h) + 1)]]
+    # Вывод результатов в консоль
+    print("Time\tExplicit\tImplicit\tWeighted\tAnalytical")
+    for i in range(len(t_explicit)):
+        print(f"{t_explicit[i]:.2f}\t{y_explicit[i]:.4f}\t\t{y_implicit[i]:.4f}\t\t{y_weighted[i]:.4f}\t\t{y_analytical[i]:.4f}")
 
-    print("Явный метод Эйлера:")
-    for t, y in explicit_results:
-        print(f"t = {t:.2f}, y = {y:.5f}")
+    # Графики
+    plt.figure(figsize=(10, 6))
+    plt.plot(t_explicit, y_explicit, label='Explicit Scheme', marker='o')
+    plt.plot(t_implicit, y_implicit, label='Implicit Scheme', marker='x')
+    plt.plot(t_weighted, y_weighted, label='Weighted Scheme', marker='s')
+    plt.plot(t_analytical, y_analytical, label='Analytical Solution', linestyle='dashed')
 
-    print("\nНеявный метод Эйлера:")
-    for t, y in implicit_results:
-        print(f"t = {t:.2f}, y = {y:.5f}")
-
-    print("\nВесовой метод:")
-    for t, y in weighted_results:
-        print(f"t = {t:.2f}, y = {y:.5f}")
-
-    print("\nАналитическое решение:")
-    for t, y in analytical_results:
-        print(f"t = {t:.2f}, y = {y:.5f}")
+    plt.xlabel('Time')
+    plt.ylabel('y(t)')
+    plt.title('Solutions of the Cauchy Problem')
+    plt.legend()
+    plt.grid()
+    plt.show()
