@@ -3,11 +3,11 @@ import matplotlib.pyplot as plt
 
 # Определяем функцию
 def f(t, y):
-    return -2 * y + math.exp(-t)
+    return -(y**2)/(math.sqrt(1+t**2))
 
 # Аналитическое решение
 def analytical_solution(t):
-    return (1/6) * math.exp(-2*t) + (1/3) * math.exp(-t)
+    return 1/(math.log1p(math.sqrt(1+t**2)+t)+1)
 
 # Явная схема
 def explicit_scheme(t0, y0, h, N):
