@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 # Определяем функцию
 def f(t, y):
-    return -(y**2)/(1+t**2)
+    return -(y**2)/math.sqrt(4+9*t**2)
 
 # Аналитическое решение
 def analytical_solution(t):
