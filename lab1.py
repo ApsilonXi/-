@@ -1,7 +1,6 @@
 import math
 import matplotlib.pyplot as plt
 
-# Определяем функцию
 def f(t, y):
     return -(y**2)/math.sqrt(4+9*t**2)
 
@@ -36,29 +35,23 @@ def weighted_scheme(t0, y0, h, N):
         y.append(y[i - 1] + (h / 2) * (f(t[i - 1], y[i - 1]) + f(t[i], y[i - 1])))
     return t, y
 
-# Основная часть программы
 if __name__ == "__main__":
-    # Параметры
-    t0 = 0        # начальное время
-    y0 = 1        # начальное значение
+    t0 = 0        
+    y0 = 1        
     h = 0.1       # шаг
     N = 100       # количество шагов
 
-    # Решаем уравнения
-    t_explicit, y_explicit = explicit_scheme(t0, y0, h, N)
-    t_implicit, y_implicit = implicit_scheme(t0, y0, h, N)
-    t_weighted, y_weighted = weighted_scheme(t0, y0, h, N)
-    
-    # Вычисления для аналитического решения
     t_analytical = [t0 + i*h for i in range(N + 1)]
     y_analytical = [analytical_solution(t) for t in t_analytical]
 
-    # Вывод результатов в консоль
-    print("Time\tExplicit\tImplicit\tWeighted\tAnalytical")
-    for i in range(len(t_explicit)):
-        print(f"{t_explicit[i]:.2f}\t{y_explicit[i]:.4f}\t\t{y_implicit[i]:.4f}\t\t{y_weighted[i]:.4f}\t\t{y_analytical[i]:.4f}")
+    t_explicit, y_explicit = explicit_scheme(t0, y0, h, N)
+    t_implicit, y_implicit = implicit_scheme(t0, y0, h, N)
+    t_weighted, y_weighted = weighted_scheme(t0, y0, h, N)
 
-    # Графики
+    print("Time\tAnalytical\tExplicit\tImplicit\tWeighted")
+    for i in range(len(t_explicit)):
+        print(f"{y_analytical[i]:.4f}\t{t_explicit[i]:.2f}\t\t{y_explicit[i]:.4f}\t\t{y_implicit[i]:.4f}\t\t{y_weighted[i]:.4f}")
+
     plt.figure(figsize=(10, 6))
     plt.plot(t_explicit, y_explicit, label='Explicit Scheme', marker='o')
     plt.plot(t_implicit, y_implicit, label='Implicit Scheme', marker='x')
