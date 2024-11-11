@@ -48,7 +48,7 @@ if __name__ == "__main__":
     t_implicit, y_implicit = implicit_scheme(t0, y0, h, N)
     t_weighted, y_weighted = weighted_scheme(t0, y0, h, N)
 
-    print("Time\tAnalytical\tExplicit\tImplicit\tWeighted")
+    print("t\tAnalytical\tExplicit\tImplicit\tWeighted")
     for i in range(len(t_explicit)):
         print(f"{y_analytical[i]:.4f}\t{t_explicit[i]:.2f}\t\t{y_explicit[i]:.4f}\t\t{y_implicit[i]:.4f}\t\t{y_weighted[i]:.4f}")
 
@@ -58,9 +58,8 @@ if __name__ == "__main__":
     plt.plot(t_weighted, y_weighted, label='Weighted Scheme', marker='s')
     plt.plot(t_analytical, y_analytical, label='Analytical Solution', linestyle='dashed')
 
-    plt.xlabel('Time')
+    plt.xlabel('t')
     plt.ylabel('y(t)')
-    plt.title('Solutions of the Cauchy Problem')
     plt.legend()
     plt.grid()
     plt.show()
