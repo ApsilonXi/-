@@ -1,12 +1,12 @@
-import math
+import numpy as np
 import matplotlib.pyplot as plt
 
 def f(t, y):
-    return -(y**2)/math.sqrt(4+9*t**2)
+    return -(y**2)/np.sqrt(4+9*t**2)
 
 # Аналитическое решение
 def analytical_solution(t):
-    return 1/(math.log1p(math.sqrt(1+t**2)+t)+1)
+    return np.sqrt(9)/( np.log(np.sqrt(9*t**2 + 4) + np.sqrt(9*t**2)) - np.log(2) + np.sqrt(9) )
 
 # Явная схема
 def explicit_scheme(t0, y0, h, N):
@@ -53,10 +53,10 @@ if __name__ == "__main__":
         print(f"{y_analytical[i]:.4f}\t{t_explicit[i]:.2f}\t\t{y_explicit[i]:.4f}\t\t{y_implicit[i]:.4f}\t\t{y_weighted[i]:.4f}")
 
     plt.figure(figsize=(10, 6))
-    plt.plot(t_explicit, y_explicit, label='Explicit Scheme', marker='o')
-    plt.plot(t_implicit, y_implicit, label='Implicit Scheme', marker='x')
-    plt.plot(t_weighted, y_weighted, label='Weighted Scheme', marker='s')
-    plt.plot(t_analytical, y_analytical, label='Analytical Solution', linestyle='dashed')
+    plt.plot(t_explicit, y_explicit, label='Explicit', marker='o')
+    plt.plot(t_implicit, y_implicit, label='Implicit', marker='x')
+    plt.plot(t_weighted, y_weighted, label='Weighted', marker='s')
+    plt.plot(t_analytical, y_analytical, label='Analytical', linestyle='dashed')
 
     plt.xlabel('t')
     plt.ylabel('y(t)')
