@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-#крест кабаре дописать
+
 L, T, Nx, Nt, v = 150, 50, 90, 200, -0.5
 dx, dt = L / Nx, T / Nt
 x, t = np.linspace(0, L, Nx), np.linspace(0, T, Nt)
