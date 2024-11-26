@@ -69,27 +69,11 @@ def cross_scheme():
 
     return q
 
-# Комбинированная схема "крест" и "кабаре"
-def combined_cross_kabare():
-    q = q_initial.copy()
-    global q_old
-    for n in range(Nt - 1):
-        q_new = q.copy()
-        for i in range(1, Nx - 1):
-            if n % 2 != 0:  # НЕчётные временные шаги - схема "крест"
-                q_new[i] = q_old[i] - v * dt / dx * (q[i + 1] - q[i - 1])
-            else:  # чётные временные шаги - схема "кабаре"
-                q_new[i] = q[i] - q[i + 1] + q_old[i + 1] - v * (2 * dt) / dx * (q[i + 1] - q[i])
-        q_old = q.copy()
-        q = q_new
-    return q
-
 q_center = center()
 q_kabare = kabare()
 q_left = left()
 q_smes = mixed()
 q_cross = cross_scheme()
-q_combined = combined_cross_kabare()
 fig, axs = plt.subplots(2, 3, figsize=(11, 6))
 
 # центральная схема
@@ -120,17 +104,12 @@ axs[1, 1].set_ylabel('q')
 axs[1, 1].grid(True)
 axs[1, 1].legend()
 
+# крест схема 
 axs[0, 2].plot(x, q_cross, 'c-', label='Крест', linewidth=2, color='purple')
 axs[0, 2].set_xlabel('x')
 axs[0, 2].set_ylabel('q')
 axs[0, 2].grid(True)
 axs[0, 2].legend()
-
-axs[1, 2].plot(x, q_combined, 'c-', label='Крест + Кабаре', linewidth=2, color='pink')
-axs[1, 2].set_xlabel('x')
-axs[1, 2].set_ylabel('q')
-axs[1, 2].grid(True)
-axs[1, 2].legend()
 
 plt.tight_layout()
 plt.show()
