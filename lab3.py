@@ -12,7 +12,6 @@ N = int(L / dx)  # количество пространственных шаг�
 T_max = 100  # максимальное время
 x_values = np.linspace(0, L, N + 1)
 
-# Задаем начальную функцию
 def initial_distribution(x):
     if 0 <= x < 50:
         return 0
@@ -36,7 +35,7 @@ def compute_fourier_coefficients(n_max):
 b_coefficients = compute_fourier_coefficients(n_max)
 
 
-def u_fourier(x, t, n_max, b_coefficients):
+def u_fourier(x, t, n_max, b_coefficients): #расчёт
     sum_ = 0
     for n in range(1, n_max + 1):
         bn = b_coefficients[n - 1]
@@ -112,59 +111,6 @@ u_implicit = solve_implicit_method(dx, dt, alpha, N, T_max)
 # Моменты времени для вывода
 times = [0, 10, 25, 50, 75, 100]
 time_steps = [int(t / dt) for t in times]
-
-# Создаем 3 графика на одной фигуре
-fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(20, 8))
-
-# --- Левый график для решения через ряд Фурье ---
-ax1.set_title("Аналитическое решение")
-ax1.set_xlabel('x')
-ax1.set_ylabel('u(x, t)')
-ax1.grid(True)
-
-# График начальной функции
-ax1.plot(x_values, [initial_distribution(x) for x in x_values], label='Начальная', linestyle='-', color='black')
-
-# Графики для решения через ряд Фурье с пунктиром
-for t in times[1:]:
-    u_fourier_values = [u_fourier(x, t, n_max, b_coefficients) for x in x_values]
-    ax1.plot(x_values, u_fourier_values, label=f't = {t}', linestyle='-.')
-
-ax1.legend()
-
-# --- Средний график для явного решения ---
-ax2.set_title("Явное решение")
-ax2.set_xlabel('x')
-ax2.set_ylabel('u(x, t)')
-ax2.grid(True)
-
-# График начальной функции для явного метода
-ax2.plot(x_values, [initial_distribution(x) for x in x_values], label='Начальная', linestyle='-', color='black')
-
-# Графики для явного метода с пунктиром
-for idx, t in enumerate(time_steps[1:]):
-    ax2.plot(x_values, u_explicit[t, :], label=f't = {times[idx+1]}', linestyle='-.')
-
-ax2.legend()
-
-# --- Правый график для неявного решения ---
-ax3.set_title("Неявное решение")
-ax3.set_xlabel('x')
-ax3.set_ylabel('u(x, t)')
-ax3.grid(True)
-
-# График начальной функции для неявного метода
-ax3.plot(x_values, [initial_distribution(x) for x in x_values], label='Начальная', linestyle='-', color='black')
-
-# Графики для неявного метода с пунктиром
-for idx, t in enumerate(time_steps[1:]):
-    ax3.plot(x_values, u_implicit[t, :], label=f't = {times[idx+1]}', linestyle='-.')
-
-ax3.legend()
-
-# Показываем все графики
-plt.tight_layout()
-plt.show()
 
 # Функция для вычисления RMSE
 def compute_rmse(true_values, approx_values):
