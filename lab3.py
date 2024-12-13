@@ -148,22 +148,18 @@ schemas = {
 }
 
 fig, axs = plt.subplots(3, 1, figsize=(7, 14))
-fig.suptitle("Сравнение различных методов решения")
-
 for idx, (name, config) in enumerate(schemas.items()):
     func = config['func']   # Получаем функцию
     style = config['style'] # Стиль линии
     color = config['color'] # Цвет линии
     result = func(f, t, h, k, interval, x0, xl)
-    axs[idx].plot(x, initial, 'black', label="Заданная")
+    axs[idx].plot(x, initial, 'purple', label="Задано")
     axs[idx].plot(x, result, linestyle=style, color=color, label=name)
     axs[idx].set_xlim(0, 100)
     axs[idx].set_ylim(-0.1, 1.1)
-    axs[idx].set_xlabel('x')
-    axs[idx].set_ylabel('y')
     axs[idx].grid(True)
     axs[idx].legend()
-    axs[idx].set_title(f"Метод: {name}")
+    axs[idx].set_title(f"{name}")
 
 plt.tight_layout(rect=[0, 0, 1, 0.96])
 plt.show()
