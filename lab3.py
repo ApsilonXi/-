@@ -1,17 +1,15 @@
 import math
 import matplotlib.pyplot as plt
+import numpy as np
 
-# Константы
-L = 100  # длина стержня
-alpha = 1  # коэффициент температуропроводности
-n_max = 100
-dx = 1  # шаг по пространству
-dt = 0.1  # шаг по времени
-N = int(L / dx)  # количество пространственных шагов
-T_max = 100  # максимальное время
-x_values = [i * dx for i in range(N + 1)]
+# Задаем параметры задачи
+t = 0.5  # Временной шаг
+h = 1    # Пространственный шаг
+k = 1    # Коэффициент теплопроводности
+x0 = 0   # Левая граница графика
+xl = 100 # Правая граница графика
+interval = 100 # Количество временных шагов
 
-# Задаем начальную функцию
 def initial_distribution(x):
     if 50 <= x <= 60:
         return -0.01 * (x - 60)**2 + 1
@@ -19,20 +17,77 @@ def initial_distribution(x):
         return (70 - x) / 10
     return 0
 
-# Функция для численного интегрирования методом прямоугольников
+f = initial_distribution      # Начальная функция
+
+# Явный метод для решения задачи теплопроводности
+def explicit(f, t, h, k, n, x0, xl):
+    x = np.arange(x0, xl + h, h, dtype=float)
+    q_prev = np.array([f(_x) for _x in x])
+    size = x.size
+    for _ in range(1, n):
+        q = np.empty(size)
+        for i in range(size):
+            q_n_i = q_prev[i]
+            q_n_ip1 = q_prev[i + 1] if (i + 1 < size) else 0
+            q_n_im1 = q_prev[i - 1] if (i - 1 >= 0) else 0
+            q[i] = q_n_i + k * t * (q_n_ip1 - 2 * q_n_i + q_n_im1) / (h * h)
+        q_prev = q
+    return q
+
+# Неявный метод для решения задачи теплопроводности
+def implicit(f, t, h, k, n, x0, xl):
+    x = np.arange(x0, xl + h, h, dtype=float)
+    q_prev = np.array([f(_x) for _x in x])
+    size = x.size
+    a = b = k / (h * h)
+    c = 1 / t + 2 * k / (h * h)
+    for _ in range(1, n):
+        q = np.empty(size)
+        F = [q_i / t for q_i in q_prev]
+        alpha = np.zeros(size)
+        betta = np.zeros(size + 1)
+        z = np.zeros(size)
+        # Прямой ход метода прогонки
+        for j in range(size - 1):
+            z[j] = (c - a * alpha[j])
+            alpha[j + 1] = b / (z[j])
+            betta[j + 1] = (F[j] + betta[j] * a) / z[j]
+        # Обратный ход метода прогонки
+        q[size - 1] = betta[size]
+        for i in range(size - 1, 0, -1):
+            q[i - 1] = betta[i] + alpha[i] * q[i]
+        q_prev = q
+    return q
+
+'''# Функция для численного интегрирования методом прямоугольников
 def integrate(f, a, b, steps=1000):
     step_size = (b - a) / steps
     total = 0
     for i in range(steps):
         x = a + i * step_size
         total += f(x) * step_size
-    return total
+    return total'''
 
-# Вычисление коэффициентов Фурье
-def compute_fourier_coefficients(n_max):
-    coefficients = []
+# для аналитического решения задачи
+def fourier(f, t, h, k, n, x0, xl):
+    x = np.arange(x0, xl + h, h, dtype=float)
+    n *= t
+    L = xl - x0
+    W = math.pi / L
+    size = x.size
+    C = np.empty(size)
+
+    for m in range(size):
+        if m == 0:
+            C[m] = 0  
+        else:
+            integral1 = ((-0.01 ) * (60 - 50) ** 3 + (60 - 50) +1) * (math.sin(W * m * 60) - math.sin(W * m * 50))
+            integral2 = (1 / 10) * ((70 - 60) * math.sin(W * m * 70) - (70 - 60) * math.sin(W * m * 60))  
+
+            C[m] = (2 / L) * (integral1 + integral2)
+
+    '''coefficients = []
     for m in range(1, n_max + 1):
-        # Предварительные вычисления значений углов
         pi = math.pi
         cos_mpi_60 = math.cos(m * pi * 60 / L)
         sin_mpi_60 = math.sin(m * pi * 60 / L)
@@ -40,7 +95,6 @@ def compute_fourier_coefficients(n_max):
         cos_mpi_70 = math.cos(m * pi * 70 / L)
         sin_mpi_70 = math.sin(m * pi * 70 / L)
         
-        # Общие члены для сокращения кода
         sin_10m_pi = math.sin(10 * m * pi / L)
         cos_10m_pi = math.cos(10 * m * pi / L)
 
@@ -68,138 +122,48 @@ def compute_fourier_coefficients(n_max):
         I2 = I2_cos_part + I2_sin_part
 
         # Общий результат
-        coefficients.append((2/L) * (I1 + I2))
-    return coefficients
+        coefficients.append((2/L) * (I1 + I2))'''
 
-b_coefficients = compute_fourier_coefficients(n_max)
+    for m in range(1, size):
+        integral = 0
+        for i in range(len(x) - 1):
+            integral += (f(x[i]) * math.sin(W * m * x[i]) + f(x[i + 1]) * math.sin(W * m * x[i + 1])) * (x[i + 1] - x[i]) / 2
+        C[m] += (2 / L) * integral
 
-# Функция для аналитического решения через ряд Фурье
-def u_fourier(x, t, n_max, b_coefficients):
-    sum_ = 0
-    for n in range(1, n_max + 1):
-        bn = b_coefficients[n - 1]
-        sum_ += bn * math.exp(-alpha * (n * math.pi / L)**2 * t) * math.sin(n * math.pi * x / L)
-    return sum_
-
-# Явное решение задачи
-def solve_explicit_method(dx, dt, alpha, N, T_max):
-    u = [[0] * (N + 1) for _ in range(int(T_max / dt) + 1)]
-    # Начальное условие
-    for i in range(N + 1):
-        u[0][i] = initial_distribution(i * dx)
     
-    # Коэффициент схемы
-    r = alpha * dt / dx**2
     
-    # Явная схема конечных разностей
-    for n in range(0, int(T_max / dt)):
-        for i in range(1, N):
-            u[n + 1][i] = u[n][i] + r * (u[n][i + 1] - 2 * u[n][i] + u[n][i - 1])
-    
-    return u
+    q = np.empty(size)
+    for i in range(size):
+        q[i] = sum(C[m] * math.e ** (-k * W ** 2 * m ** 2 * n) * math.sin(W * m * x[i]) for m in range(1, size))
+    return q
 
-# Решение методом прогонки для неявной схемы
-def solve_implicit_method(dx, dt, alpha, N, T_max):
-    u = [[0] * (N + 1) for _ in range(int(T_max / dt) + 1)]
-    # Начальное условие
-    for i in range(N + 1):
-        u[0][i] = initial_distribution(i * dx)
-    
-    r = alpha * dt / dx**2
-    
-    # Неявная схема через метод прогонки
-    for n in range(0, int(T_max / dt)):
-        # Правая часть (вектор d)
-        d = u[n][1:N]  # Мы не учитываем границы
-        
-        # Прямой ход прогонки
-        P = [0] * (N - 1)
-        Q = [0] * (N - 1)
-        
-        # Параметры для системы уравнений
-        A = [-r] * (N - 2)
-        B = [(1 + 2 * r)] * (N - 1)
-        C = [-r] * (N - 2)
 
-        # Прямой ход
-        P[0] = C[0] / B[0]
-        Q[0] = d[0] / B[0]
-        
-        for i in range(1, N - 2):
-            denominator = B[i] - A[i - 1] * P[i - 1]
-            P[i] = C[i] / denominator
-            Q[i] = (d[i] - A[i - 1] * Q[i - 1]) / denominator
-        
-        # Обратный ход
-        u[n + 1][1] = Q[-1]  # Первая неизвестная
-        for i in range(N - 3, -1, -1):
-            u[n + 1][i + 1] = Q[i] - P[i] * u[n + 1][i + 2]
-        
-        # Граничные условия
-        u[n + 1][0] = u[n + 1][1]  # Левое условие (например, постоянная температура)
-        u[n + 1][-1] = u[n + 1][-2]  # Правое условие (например, диффузия)
+x = np.arange(x0, xl + h, h, dtype=float)
+initial = np.array([f(_x) for _x in x])
 
-    return u
+schemas = {
+    'Аналитическое': {'func': fourier, 'style': 'dotted', 'color': 'blue'},
+    'Явная': {'func': explicit, 'style': 'dashdot', 'color': 'red'},
+    'Прогонка': {'func': implicit, 'style': 'dashed', 'color': 'green'}
+}
 
-# Решаем задачу явным методом
-u_explicit = solve_explicit_method(dx, dt, alpha, N, T_max)
+fig, axs = plt.subplots(3, 1, figsize=(7, 14))
+fig.suptitle("Сравнение различных методов решения")
 
-# Решаем задачу неявным методом
-u_implicit = solve_implicit_method(dx, dt, alpha, N, T_max)
+for idx, (name, config) in enumerate(schemas.items()):
+    func = config['func']   # Получаем функцию
+    style = config['style'] # Стиль линии
+    color = config['color'] # Цвет линии
+    result = func(f, t, h, k, interval, x0, xl)
+    axs[idx].plot(x, initial, 'black', label="Заданная")
+    axs[idx].plot(x, result, linestyle=style, color=color, label=name)
+    axs[idx].set_xlim(0, 100)
+    axs[idx].set_ylim(-0.1, 1.1)
+    axs[idx].set_xlabel('x')
+    axs[idx].set_ylabel('y')
+    axs[idx].grid(True)
+    axs[idx].legend()
+    axs[idx].set_title(f"Метод: {name}")
 
-# Моменты времени для вывода
-times = [0, 10, 25, 50, 75, 100]
-time_steps = [int(t / dt) for t in times]
-
-# Создаем 3 графика на одной фигуре
-fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(20, 8))
-
-# --- Левый график для решения через ряд Фурье ---
-ax1.set_title("Аналитическое решение")
-ax1.set_xlabel('x')
-ax1.set_ylabel('u(x, t)')
-ax1.grid(True)
-
-# График начальной функции
-ax1.plot(x_values, [initial_distribution(x) for x in x_values], label='Начальная', linestyle='-', color='black')
-
-# Графики для решения через ряд Фурье с пунктиром
-for t in times[1:]:
-    u_fourier_values = [u_fourier(x, t, n_max, b_coefficients) for x in x_values]
-    ax1.plot(x_values, u_fourier_values, label=f't = {t}', linestyle='-.')
-
-ax1.legend()
-
-# --- Средний график для явного решения ---
-ax2.set_title("Явное решение")
-ax2.set_xlabel('x')
-ax2.set_ylabel('u(x, t)')
-ax2.grid(True)
-
-# График начальной функции для явного метода
-ax2.plot(x_values, [initial_distribution(x) for x in x_values], label='Начальная', linestyle='-', color='black')
-
-# Графики для явного метода с пунктиром
-for idx, t in enumerate(time_steps[1:]):
-    ax2.plot(x_values, u_explicit[t], label=f't = {times[idx+1]}', linestyle='-.')
-
-ax2.legend()
-
-# --- Правый график для неявного решения ---
-ax3.set_title("Неявное решение")
-ax3.set_xlabel('x')
-ax3.set_ylabel('u(x, t)')
-ax3.grid(True)
-
-# График начальной функции для неявного метода
-ax3.plot(x_values, [initial_distribution(x) for x in x_values], label='Начальная', linestyle='-', color='black')
-
-# Графики для неявного метода с пунктиром
-for idx, t in enumerate(time_steps[1:]):
-    ax3.plot(x_values, u_implicit[t], label=f't = {times[idx+1]}', linestyle='-.')
-
-ax3.legend()
-
-# Показываем все графики
-plt.tight_layout()
+plt.tight_layout(rect=[0, 0, 1, 0.96])
 plt.show()
